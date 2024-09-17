@@ -4,21 +4,19 @@ import json
 import copy
 import os
 
-if not os.path.exists("graph.json"):
+try:
+    raw_graph = json.load(open("graph.json"))
+except OSError:
     print(
         "Please run `pydeps --noshow --nodot --show-deps "
         "--deps-output=graph.json /path/to/spack/lib/spack/spack`"
     )
     exit(1)
 
-
 def fixup_edges(graph):
     for data in graph.values():
         data["children"] = [name for name in data["children"] if name in graph]
         data["parents"] = [name for name in data["parents"] if name in graph]
-
-
-raw_graph = json.load(open("graph.json"))
 
 # remove nodes that do not match `spack.*`
 pruned_graph = {
@@ -36,8 +34,6 @@ aliases = {
 
 for old, new in aliases.items():
     item = pruned_graph.pop(old)
-
-    # make children of old children of new
 
     for child in item["children"]:
         if child != new:
