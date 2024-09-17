@@ -22,5 +22,8 @@ Manifest.toml:
 solution: graph.txt Manifest.toml solve.jl
 	$(JULIA) --project=. ./solve.jl | tee solution
 
+clean-graph:
+	rm -f graph.json
+
 clean:
 	rm -rf graph.json graph.txt Manifest.toml Project.toml solution venv
