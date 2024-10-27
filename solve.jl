@@ -19,7 +19,7 @@ function solve()
     nodes, edges = read_from_file()
     g = SimpleDiGraph(Edge.(edges))
 
-    result = find_feedback_arc_set(g)
+    result = find_feedback_arc_set(g, self_loops="include")
 
     nodes_to_edges = Dict{String, Vector{String}}()
 

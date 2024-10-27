@@ -22,7 +22,8 @@ Manifest.toml:
 	@$(JULIA) --project=. -e 'using Pkg; Pkg.add(url = "https://github.com/GunnarFarneback/FeedbackArcSets.jl.git"); Pkg.add("Graphs"); Pkg.instantiate()'
 
 solution: graph.txt Manifest.toml solve.jl
-	@$(JULIA) --project=. ./solve.jl | tee solution
+	@$(JULIA) --project=. ./solve.jl > $@
+	cat $@
 
 clean-graph:
 	rm -f graph.json
