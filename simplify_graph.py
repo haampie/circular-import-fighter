@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import json
 import copy
+import json
 import os
 
 try:
@@ -13,10 +13,12 @@ except OSError:
     )
     exit(1)
 
+
 def fixup_edges(graph):
     for data in graph.values():
         data["children"] = [name for name in data["children"] if name in graph]
         data["parents"] = [name for name in data["parents"] if name in graph]
+
 
 # remove nodes that do not match `spack.*`
 pruned_graph = {
@@ -28,9 +30,7 @@ pruned_graph = {
 # remove edges to nodes that are not in the graph
 fixup_edges(pruned_graph)
 
-aliases = {
-    "spack.environment.environment": "spack.environment"
-}
+aliases = {"spack.environment.environment": "spack.environment"}
 
 for old, new in aliases.items():
     item = pruned_graph.pop(old)

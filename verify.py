@@ -65,6 +65,7 @@ for parent, child in sorted(delete):
         print(f"edge {parent} -> {child} not found")
         continue
 
+
 def dfs(graph, node, visited):
     if visited[node] == 2:
         return True
@@ -83,6 +84,7 @@ def dfs(graph, node, visited):
     visited[node] = 2
 
     return True
+
 
 visited = {name: 0 for name in node_names}
 
