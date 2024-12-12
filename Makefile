@@ -4,7 +4,7 @@ all: solution
 
 JULIA = julia
 PYTHON = python3
-SPACK_ROOT = ~/spack
+SPACK_ROOT ?= ~/spack
 
 venv/bin/python3:
 	@$(PYTHON) -m venv venv
