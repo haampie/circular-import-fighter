@@ -13,7 +13,7 @@ venv/bin/python3:
 dependencies: Manifest.toml venv/bin/python3
 
 graph.json: venv/bin/python3
-	@./venv/bin/python3 -mpydeps --noshow --nodot --show-deps --deps-output=graph.json $(SPACK_ROOT)/lib/spack/spack
+	./venv/bin/python3 -mpydeps --noshow --nodot --show-deps --deps-output=graph.json $(SPACK_ROOT)/lib/spack/spack
 
 graph.txt: graph.json venv/bin/python3 simplify_graph.py
 	@./venv/bin/python3 simplify_graph.py
