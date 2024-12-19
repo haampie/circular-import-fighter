@@ -31,7 +31,7 @@ function solve()
     end
 
     open(ARGS[2], "w") do file
-        println(file, "edges to delete: $(length(result.feedback_arc_set))")
+        println(file, length(result.feedback_arc_set))
         for node in sort!(collect(keys(nodes_to_edges)))
             edges = nodes_to_edges[node]
             node = replace(node, "." => "/")
