@@ -30,11 +30,13 @@ function solve()
         push!(nodes_to_edges[nodes[from]], nodes[to])
     end
 
-    println("edges to delete: $(length(result.feedback_arc_set))")
-    for node in sort!(collect(keys(nodes_to_edges)))
-        edges = nodes_to_edges[node]
-        node = replace(node, "." => "/")
-        println("$node: $(join(edges, " "))")
+    open(ARGS[2], "w") do file
+        println(file, "edges to delete: $(length(result.feedback_arc_set))")
+        for node in sort!(collect(keys(nodes_to_edges)))
+            edges = nodes_to_edges[node]
+            node = replace(node, "." => "/")
+            println(file, "$node: $(join(edges, " "))")
+        end
     end
 end
 

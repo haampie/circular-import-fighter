@@ -23,8 +23,8 @@ Manifest.toml:
 	@$(JULIA) --project=. -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/GunnarFarneback/FeedbackArcSets.jl.git", rev="6f0f15d252e7f17d3328babfbaea87b7a7558702")); Pkg.add("Graphs"); Pkg.instantiate()'
 
 solution$(SUFFIX): graph$(SUFFIX).txt Manifest.toml solve.jl
-	@$(JULIA) --project=. ./solve.jl $< > $@
-	cat $@
+	@$(JULIA) --project=. ./solve.jl $< $@
+	@cat $@
 
 clean-graph:
 	rm -f $(wildcard graph*.json graph*.txt)
