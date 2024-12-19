@@ -2,7 +2,7 @@ using Graphs
 using FeedbackArcSets
 
 function read_from_file()
-    open("graph.txt") do file
+    open(ARGS[1]) do file
         N = parse(Int, readline(file))
         nodes = [readline(file) for i in 1:N]
         M = parse(Int, readline(file))

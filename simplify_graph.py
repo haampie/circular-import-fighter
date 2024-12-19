@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 
-import copy
 import json
-import os
+import sys
 
-try:
-    raw_graph = json.load(open("graph.json"))
-except OSError:
-    print(
-        "Please run `pydeps --noshow --nodot --show-deps "
-        "--deps-output=graph.json /path/to/spack/lib/spack/spack`"
-    )
-    exit(1)
+raw_graph = json.load(open(sys.argv[1]))
+output = open(sys.argv[2], "w")
 
 
 def fixup_edges(graph):
@@ -58,7 +51,7 @@ for item in pruned_graph.values():
     item["parents"] = sorted(set(item["parents"]))
 
 nodes = sorted(pruned_graph.keys())
-with open("graph.txt", "w") as f:
+with output as f:
     print(len(nodes), file=f)
     for node in nodes:
         print(node, file=f)
