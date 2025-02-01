@@ -94,26 +94,31 @@ function solve(old_graph, new_graph)
                 "\nHowever, instead of removing $(difference_nonoptimal) import \
                 $(pl(difference_nonoptimal, "statement")), it is sufficient to remove only \
                 $(difference) import $(pl(difference, "statement")) from \
-                the following list:\n\n",
+                the following list:\n",
             )
 
+            println("---")
             print_problematic_edges(Ṽ, G̃_fas.feedback_arc_set, color = :normal)
         else
             printstyled(
-                "\n\nAll import cycles are broken by removing the following import statements:\n\n",
+                "\n\nAll import cycles are broken by removing the following import statements:\n",
                 color = :light_black,
             )
+            println("---")
             print_problematic_edges(V, G̃_fas.feedback_arc_set, color = :light_black)
         end
+        println("---")
 
         exit(1)
     end
 
     printstyled(
-        "\n\nAll import cycles are broken by removing the following import statements:\n\n",
+        "\n\nAll import cycles are broken by removing the following import statements:\n",
         color = :light_black,
     )
+    println("---")
     print_problematic_edges(V, G̃_fas.feedback_arc_set, color = :light_black)
+    println("---")
 
 end
 
