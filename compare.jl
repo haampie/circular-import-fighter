@@ -28,7 +28,7 @@ function print_problematic_edges(V, E; color = :normal, bold = false)
     for node in sort!(collect(keys(nodes_to_edges)))
         edges = nodes_to_edges[node]
         node = replace(node, "." => "/")
-        printstyled("$node: $(join(edges, " "))\n", bold = bold, color = color)
+        printstyled("$node imports: $(join(edges, ", "))\n", bold = bold, color = color)
     end
 end
 
@@ -94,13 +94,13 @@ function solve(old_graph, new_graph)
                 "\nHowever, instead of removing $(difference_nonoptimal) import \
                 $(pl(difference_nonoptimal, "statement")), it is sufficient to remove only \
                 $(difference) import $(pl(difference, "statement")) from \
-                the following list:\n",
+                the following list:\n\n",
             )
 
             print_problematic_edges(Ṽ, G̃_fas.feedback_arc_set, color = :normal)
         else
             printstyled(
-                "\nThe full set of problematic import statements is as follows:\n",
+                "\n\nAll import cycles are broken by removing the following import statements:\n\n",
                 color = :light_black,
             )
             print_problematic_edges(V, G̃_fas.feedback_arc_set, color = :light_black)
@@ -110,7 +110,7 @@ function solve(old_graph, new_graph)
     end
 
     printstyled(
-        "\n\nThe full set of problematic import statements is as follows:\n\n",
+        "\n\nAll import cycles are broken by removing the following import statements:\n\n",
         color = :light_black,
     )
     print_problematic_edges(V, G̃_fas.feedback_arc_set, color = :light_black)
