@@ -4,10 +4,10 @@ using FeedbackArcSets
 function read_from_file()
     open(ARGS[1]) do file
         N = parse(Int, readline(file))
-        nodes = [readline(file) for i in 1:N]
+        nodes = [readline(file) for i = 1:N]
         M = parse(Int, readline(file))
-        edges = Vector{Tuple{Int, Int}}(undef, M)
-        for i in 1:M
+        edges = Vector{Tuple{Int,Int}}(undef, M)
+        for i = 1:M
             edge = split(readline(file))
             edges[i] = (parse(Int, edge[1]) + 1, parse(Int, edge[2]) + 1)
         end
@@ -19,9 +19,9 @@ function solve()
     nodes, edges = read_from_file()
     g = SimpleDiGraph(Edge.(edges))
 
-    result = find_feedback_arc_set(g, self_loops="include")
+    result = find_feedback_arc_set(g, self_loops = "include")
 
-    nodes_to_edges = Dict{String, Vector{String}}()
+    nodes_to_edges = Dict{String,Vector{String}}()
 
     for (from, to) in result.feedback_arc_set
         if !haskey(nodes_to_edges, nodes[from])
