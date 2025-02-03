@@ -29,7 +29,7 @@ clean-graph:
 	rm -f $(wildcard graph*.json graph*.txt)
 
 compare: graph-1.txt graph-2.txt Manifest.toml compare.jl
-	@$(JULIA) --project=. ./compare.jl graph-1.txt graph-2.txt
+	@$(JULIA) --project=. --color=yes ./compare.jl graph-1.txt graph-2.txt
 
 clean:
 	rm -rf $(wildcard graph*.json graph*.txt solution*) Manifest.toml Project.toml venv
