@@ -105,7 +105,7 @@ function solve(old_graph, new_graph)
                 color = :light_black,
             )
             println("---")
-            print_problematic_edges(V, G̃_fas.feedback_arc_set, color = :light_black)
+            print_problematic_edges(Ṽ, G̃_fas.feedback_arc_set, color = :light_black)
         end
         println("---")
 
@@ -117,7 +117,7 @@ function solve(old_graph, new_graph)
         color = :light_black,
     )
     println("---")
-    print_problematic_edges(V, G̃_fas.feedback_arc_set, color = :light_black)
+    print_problematic_edges(Ṽ, G̃_fas.feedback_arc_set, color = :light_black)
     println("---")
 
 end
