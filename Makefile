@@ -19,7 +19,7 @@ graph-%.txt: graph-%.json venv/bin/python3 simplify_graph.py
 	@./venv/bin/python3 simplify_graph.py $< $@
 
 Manifest.toml:
-	@$(JULIA) --project=. -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/GunnarFarneback/FeedbackArcSets.jl.git", rev="6f0f15d252e7f17d3328babfbaea87b7a7558702")); Pkg.add("Graphs"); Pkg.instantiate()'
+	@$(JULIA) --project=. -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/GunnarFarneback/FeedbackArcSets.jl.git", rev="0b79f19864275e761acbc877e9d0e180d6e8cd45")); Pkg.add("Graphs"); Pkg.instantiate()'
 
 solution: graph-1.txt Manifest.toml solve.jl
 	@$(JULIA) --project=. ./solve.jl $< $@
