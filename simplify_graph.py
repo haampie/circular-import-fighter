@@ -17,7 +17,7 @@ def fixup_edges(graph):
 pruned_graph = {
     node: {"children": info.get("imports", []), "parents": info.get("imported_by", [])}
     for node, info in raw_graph.items()
-    if node.startswith("spack.")
+    if node.startswith("spack.") and not node.startswith("spack.vendor")
 }
 
 # remove edges to nodes that are not in the graph
