@@ -111,14 +111,16 @@ function solve(old_graph, new_graph)
 
         exit(1)
     end
-
-    printstyled(
-        "\n\nAll import cycles are broken by removing the following import statements:\n",
-        color = :light_black,
-    )
-    println("---")
-    print_problematic_edges(Ṽ, G̃_fas.feedback_arc_set, color = :light_black)
-    println("---")
+    println()
+    if after > 0
+        printstyled(
+            "\nAll import cycles are broken by removing the following import statements:\n",
+            color = :light_black,
+        )
+        println("---")
+        print_problematic_edges(Ṽ, G̃_fas.feedback_arc_set, color = :light_black)
+        println("---")
+    end
 
 end
 

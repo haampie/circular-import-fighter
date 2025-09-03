@@ -3,4 +3,4 @@ Project.toml
 graph*.json
 graph*.txt
 solution*
-venv/
+.venv/
