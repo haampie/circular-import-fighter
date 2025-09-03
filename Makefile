@@ -2,14 +2,14 @@
 
 JULIA = julia
 PYTHON = python3
+IMPORTS_FLAGS =
 SPACK_ROOT ?= ~/spack
-
 all: solution
 
 dependencies: Manifest.toml
 
 graph-%.txt: imports.py
-	@$(PYTHON) imports.py $(word $*, $(SPACK_ROOT))/lib/spack > $@
+	@$(PYTHON) imports.py $(IMPORTS_FLAGS) --output=$@ $(word $*, $(SPACK_ROOT))/lib/spack
 
 Manifest.toml:
 	@$(JULIA) --project=. -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/GunnarFarneback/FeedbackArcSets.jl.git", rev="0b79f19864275e761acbc877e9d0e180d6e8cd45")); Pkg.add("Graphs"); Pkg.instantiate()'

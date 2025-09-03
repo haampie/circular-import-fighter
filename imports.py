@@ -1,16 +1,42 @@
+#!/usr/bin/env python3
+
 import ast
-import sys
 import os
 import re
 from typing import Set, Tuple, List, Dict
+import functools
+import argparse
+from typing import IO
+import sys
+
+
+@functools.lru_cache(maxsize=None)
+def resolve_module(root: str, module: str, attr: str) -> str:
+    """Resolve ``from foo import bar`` to either ``foo.bar`` or ``foo``, depending on whether bar
+    is a submodule or an attribute."""
+    init_file = os.path.join(
+        root,
+        module.replace(".", os.path.sep),
+        attr,
+        "__init__.py",
+    )
+    module_file = os.path.join(
+        root,
+        module.replace(".", os.path.sep),
+        f"{attr}.py",
+    )
+    if os.path.isfile(init_file) or os.path.isfile(module_file):
+        return f"{module}.{attr}"
+    return module
 
 
 class ImportVisitor(ast.NodeVisitor):
-    def __init__(self, root: str, current_pkg: str, regex: re.Pattern):
+    def __init__(self, root: str, current_pkg: str, regex: re.Pattern, inline: bool):
         self.imported: Set[str] = set()
         self.root = root
         self.current_pkg = current_pkg
         self.regex = regex
+        self.inline = inline
 
     def visit_Import(self, node):
         # import statements are always absolute
@@ -33,26 +59,7 @@ class ImportVisitor(ast.NodeVisitor):
             assert False, "Should not be here"
 
         for alias in node.names:
-            # Immediately skip if the parent does not satisfy the regex, which saves stat calls.
-            if not self.regex.match(module):
-                continue
-            init_file = os.path.join(
-                self.root,
-                module.replace(".", os.path.sep),
-                alias.name,
-                "__init__.py",
-            )
-            module_file = os.path.join(
-                self.root,
-                module.replace(".", os.path.sep),
-                f"{alias.name}.py",
-            )
-            # Distinguish between importing a submodule or an attribute.
-            if os.path.isfile(init_file) or os.path.isfile(module_file):
-                resolved_module = f"{module}.{alias.name}"
-            else:
-                resolved_module = module
-
+            resolved_module = resolve_module(self.root, module, alias.name)
             if self.regex.match(resolved_module):
                 self.imported.add(resolved_module)
 
@@ -60,28 +67,38 @@ class ImportVisitor(ast.NodeVisitor):
         # do not recurse into if TYPE_CHECKING blocks
         if isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING":
             return
+        elif isinstance(node.test, ast.Attribute) and node.test.attr == "TYPE_CHECKING":
+            return
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node):
-        # do not recurse into functions
-        pass
+        if self.inline:
+            self.generic_visit(node)
 
     def visit_AsyncFunctionDef(self, node):
-        # do not recurse into async functions
-        pass
+        if self.inline:
+            self.generic_visit(node)
 
     def visit_ClassDef(self, node):
-        # do not recurse into classes
-        pass
+        if self.inline:
+            self.generic_visit(node)
 
 
-def analyze_imports(path: str, root: str, current_pkg: str, regex: re.Pattern):
+def analyze_imports(
+    path: str, root: str, current_pkg: str, regex: re.Pattern, inline: bool
+) -> Set[str]:
     """Parses Python source code and collects only top-level imports.
-    The `relative_to` parameter is the package *directory* the source code is relative to.
+
+    Args:
+        path: Path to the Python file to analyze
+        root: Root directory of the project
+        current_pkg: Package namespace of the module being analyzed
+        regex: Pattern to filter which imports to include
+        inline: Whether to include inline imports (inside functions, classes, etc.)
     """
     with open(path, "r", encoding="utf-8") as f:
         tree = ast.parse(f.read())
-    visitor = ImportVisitor(root, current_pkg, regex)
+    visitor = ImportVisitor(root, current_pkg, regex, inline)
     visitor.visit(tree)
     return visitor.imported
 
@@ -91,6 +108,7 @@ def _is_package_dir(entry: os.DirEntry[str]) -> bool:
         entry.name.isidentifier()
         and not entry.name == "__pycache__"
         and entry.is_dir(follow_symlinks=False)
+        and os.path.isfile(os.path.join(entry.path, "__init__.py"))
     )
 
 
@@ -98,7 +116,21 @@ def _is_module_file(entry: os.DirEntry[str]) -> bool:
     return entry.is_file(follow_symlinks=False) and entry.name.endswith(".py")
 
 
-def check_project(root: str, pkg: str, pattern: str):
+def check_project(root: str, pkg: str, pattern: str, inline: bool, output: IO[str]):
+    """Analyze a Python project for import relationships between modules.
+
+    Args:
+        root: Root directory of the project
+        pkg: Name of the package to analyze (e.g. "spack")
+        pattern: Regex pattern to filter which modules to include
+        inline: Whether to include inline imports (inside functions, classes, etc.)
+        output: Output stream to write results to
+
+    Prints:
+        The Python module graph: first the number of nodes, then the nodes (one per line),
+        then the number of edges, then the edges, one per line as "from to", by index, starting
+        from 0.
+    """
     root_pkg_dir = os.path.join(root, pkg)
     stack = [root_pkg_dir]
     regex = re.compile(pattern)
@@ -106,12 +138,8 @@ def check_project(root: str, pkg: str, pattern: str):
 
     while stack:
         sub_pkg_dir = stack.pop()
-
-        # check if this is a package
-        if not os.path.isfile(os.path.join(sub_pkg_dir, "__init__.py")):
-            continue
-
         subpkg = os.path.relpath(sub_pkg_dir, root).replace(os.sep, ".")
+
         if not regex.search(subpkg):
             continue
 
@@ -125,7 +153,11 @@ def check_project(root: str, pkg: str, pattern: str):
                     else:
                         current_module = f"{subpkg}.{entry.name[:-3]}"
                     for submodule in analyze_imports(
-                        entry.path, root=root, current_pkg=subpkg, regex=regex
+                        entry.path,
+                        root=root,
+                        current_pkg=subpkg,
+                        regex=regex,
+                        inline=inline,
                     ):
                         edges_str.append((current_module, submodule))
 
@@ -134,13 +166,48 @@ def check_project(root: str, pkg: str, pattern: str):
         for idx, node in enumerate(sorted(set(x for edge in edges_str for x in edge)))
     }
 
-    print(len(node_to_index))
+    print(len(node_to_index), file=output)
     for node in node_to_index:
-        print(node)
-    print(len(edges_str))
+        print(node, file=output)
+    print(len(edges_str), file=output)
     for from_node, to_node in edges_str:
-        print(f"{node_to_index[from_node]} {node_to_index[to_node]}")
+        print(f"{node_to_index[from_node]} {node_to_index[to_node]}", file=output)
+
+
+def main():
+    """Main function to parse arguments and run the analysis."""
+    parser = argparse.ArgumentParser(
+        description="Analyze Python project imports to find cycles"
+    )
+    parser.add_argument(
+        "root", help="PYTHONPATH root of the project: e.g. ~/spack/lib/spack"
+    )
+    parser.add_argument(
+        "--pkg",
+        default="spack",
+        help="The name of the package to analyze (default: spack)",
+    )
+    parser.add_argument(
+        "--pattern",
+        default=r"spack(?!\.vendor)(?!\.test)",
+        help="The regex pattern to filter modules",
+    )
+    parser.add_argument(
+        "--inline",
+        action="store_true",
+        help="Include inline imports",
+    )
+    parser.add_argument(
+        "--output", "-o", help="Output file (default: stdout)", default=None
+    )
+    args = parser.parse_args()
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            check_project(args.root, args.pkg, args.pattern, args.inline, f)
+    else:
+        check_project(args.root, args.pkg, args.pattern, args.inline, sys.stdout)
 
 
 if __name__ == "__main__":
-    check_project(*sys.argv[1:], pkg="spack", pattern=r"spack(?!\.vendor)(?!\.test)")
+    main()
