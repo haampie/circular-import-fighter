@@ -3,7 +3,7 @@
 import ast
 import os
 import re
-from typing import Set, Tuple, List, Dict
+from typing import Set, Tuple
 import functools
 import argparse
 from typing import IO
@@ -134,7 +134,7 @@ def check_project(root: str, pkg: str, pattern: str, inline: bool, output: IO[st
     root_pkg_dir = os.path.join(root, pkg)
     stack = [root_pkg_dir]
     regex = re.compile(pattern)
-    edges_str: List[Tuple[str, str]] = []
+    edges: Set[Tuple[str, str]] = set()
 
     while stack:
         sub_pkg_dir = stack.pop()
@@ -159,19 +159,36 @@ def check_project(root: str, pkg: str, pattern: str, inline: bool, output: IO[st
                         regex=regex,
                         inline=inline,
                     ):
-                        edges_str.append((current_module, submodule))
+                        edges.add((current_module, submodule))
 
-    node_to_index: Dict[str, int] = {
+    node_to_index = {
         node: idx
-        for idx, node in enumerate(sorted(set(x for edge in edges_str for x in edge)))
+        for idx, node in enumerate(sorted(set(x for edge in edges for x in edge)))
     }
+
+    adjacency_list = {node: set() for node in node_to_index}
+    for src, dst in edges:
+        adjacency_list[src].add(dst)
+
+    # There are cases where a package foo re-exports from submodules, and those submodules do
+    # many additional imports, e.g. x imports x.y imports {foo, bar, baz}. A simple solution for
+    # the purpose of cycle elimination is to delete the edge x -> x.y, since that prunes the
+    # {foo, bar, baz} dependencies. However, that's practically infeasible since with re-exports
+    # the point is to expose the submodules as part of the parent module's API. To handle this,
+    # we propagate all child edges to the parent, so x -> {foo, bar, baz} too.
+    for src, dst in edges:
+        if dst.startswith(f"{src}."):
+            adjacency_list[src].update(adjacency_list[dst])
+
+    total_edges = sum(len(dsts) for dsts in adjacency_list.values())
 
     print(len(node_to_index), file=output)
     for node in node_to_index:
         print(node, file=output)
-    print(len(edges_str), file=output)
-    for from_node, to_node in edges_str:
-        print(f"{node_to_index[from_node]} {node_to_index[to_node]}", file=output)
+    print(total_edges, file=output)
+    for parent, children in adjacency_list.items():
+        for child in children:
+            print(f"{node_to_index[parent]} {node_to_index[child]}", file=output)
 
 
 def main():
